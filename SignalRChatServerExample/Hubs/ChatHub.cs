@@ -6,7 +6,7 @@ namespace SignalRChatServerExample.Hubs
 {
     public class ChatHub : Hub
     {
-        public async Task GetNickName(string nickName)
+        public async Task GetNickNameAsync(string nickName)
         {
             Client client = new()
             {
@@ -16,6 +16,13 @@ namespace SignalRChatServerExample.Hubs
 
             ClientSource.Clients.Add(client);
             await Clients.Others.SendAsync("clientJoined", nickName);
+            await Clients.All.SendAsync("clients", ClientSource.Clients);
+        }
+
+        public async Task SendMessageAsync(string message, string clientName)
+        {
+            Client client = ClientSource.Clients.FirstOrDefault(c => c.NickName == clientName.Trim());
+            await Clients.Client(client.ConnectionId).SendAsync("receiveMessage", message);
         }
     }
 }
