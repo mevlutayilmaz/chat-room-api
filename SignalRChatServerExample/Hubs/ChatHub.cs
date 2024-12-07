@@ -22,7 +22,16 @@ namespace SignalRChatServerExample.Hubs
         public async Task SendMessageAsync(string message, string clientName)
         {
             Client client = ClientSource.Clients.FirstOrDefault(c => c.NickName == clientName.Trim());
-            await Clients.Client(client.ConnectionId).SendAsync("receiveMessage", message);
+            Client senderClient = ClientSource.Clients.FirstOrDefault(c => c.ConnectionId == Context.ConnectionId);
+            await Clients.Client(client.ConnectionId).SendAsync("receiveMessage", message, senderClient.NickName);
+        }
+
+        public async Task AddGroupAsync(string groupName)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+            GroupSource.Groups.Add(new() { GroupName = groupName });
+
+            await Clients.All.SendAsync("groups", GroupSource.Groups);
         }
     }
 }
