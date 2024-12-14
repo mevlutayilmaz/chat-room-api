@@ -7,7 +7,7 @@
         public Guid SenderId { get; set; }
         public string Content { get; set; }
         public bool IsRead { get; set; }
-        public DateTime PostedDate { get; set; }
+        public DateTime SentAt { get; set; }
         public ChatRoom ChatRoom { get; set; }
         public AppUser Sender { get; set; }
     }
