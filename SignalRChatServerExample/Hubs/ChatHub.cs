@@ -1,16 +1,59 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using SignalRChatServerExample.Contexts;
 using SignalRChatServerExample.Entities;
+using SignalRChatServerExample.Enums;
 using SignalRChatServerExample.Services.UserService;
 
 namespace SignalRChatServerExample.Hubs
 {
-    public class ChatHub(IUserService userService) : Hub
+    public class ChatHub(IUserService userService, ApplicationDbContext context, UserManager<AppUser> userManager) : Hub
     {
         public override async Task OnConnectedAsync()
-            => await userService.OnConnectedAsync(Context.ConnectionId);
+        {
+            await userService.OnConnectedAsync(Context.ConnectionId);
+            string? userName = userService.GetCurrentUsername;
+            if (!string.IsNullOrEmpty(userName))
+                await Clients.All.SendAsync("userConnected", userName);
+        }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
-            => await userService.OnDisconnectedAsync();
+        {
+            await userService.OnDisconnectedAsync();
+            string? userName = userService.GetCurrentUsername;
+            if (!string.IsNullOrEmpty(userName))
+                await Clients.All.SendAsync("userDisconnected", userName);
+        }
+
+        public async Task SendMessageAsync(string message, string chatRoomId)
+        {
+            ChatRoom? chatRoom = await context.ChatRooms
+                .Include(cr => cr.Participants)
+                .Include(cr => cr.Messages)
+                .FirstOrDefaultAsync(cr => cr.Id == Guid.Parse(chatRoomId));
+
+            //AppUser sender = await userManager.Users.FirstOrDefaultAsync(u => u.ConnectionId == Context.ConnectionId);
+            AppUser? sender = userService.GetCurrentUser;
+
+            if(chatRoom is not null)
+            {
+                List<string> connectinIds = chatRoom.Participants.Where(u => u.Id != sender.Id).Select(u => u.ConnectionId).ToList();
+
+                await Clients.Clients(connectinIds).SendAsync("receiveMessage", message, chatRoom.Id);
+
+                chatRoom.Messages.Add(new()
+                {
+                    Content = message,
+                    IsRead = false,
+                    SenderId = sender.Id,
+                    SentAt = DateTime.UtcNow,
+                });
+            }
+
+            await context.SaveChangesAsync();
+
+        }
 
         //public async Task GetNickNameAsync(string nickName)
         //{

@@ -10,7 +10,6 @@ namespace SignalRChatServerExample.Contexts
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
         }
-        public DbSet<AppUser> AppUsers { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<ChatRoom> ChatRooms { get; set; }
     }
