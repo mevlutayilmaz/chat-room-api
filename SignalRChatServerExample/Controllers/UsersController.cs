@@ -1,19 +1,19 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using SignalRChatServerExample.Services.UserService;
 
 namespace SignalRChatServerExample.Controllers
 {
+    [Authorize(AuthenticationSchemes = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController : ControllerBase
+    public class UsersController(IUserService userService) : ControllerBase
     {
         [HttpGet("test")]
-        [Authorize] // Sadece kimliği doğrulanmış kullanıcılara izin ver
         public IActionResult Test()
         {
-            var username = HttpContext.User.Identity.Name; // kullanıcının adını al
-            return Ok($"Merhaba, {username}!");
+            
+            return Ok(userService.GetCurrentUser);
         }
 
     }

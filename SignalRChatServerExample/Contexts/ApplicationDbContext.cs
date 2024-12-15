@@ -13,12 +13,5 @@ namespace SignalRChatServerExample.Contexts
         public DbSet<AppUser> AppUsers { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<ChatRoom> ChatRooms { get; set; }
-
-        protected override void OnModelCreating(ModelBuilder builder)
-        {
-            base.OnModelCreating(builder);
-
-            builder.HasDefaultSchema("identity");
-        }
     }
 }

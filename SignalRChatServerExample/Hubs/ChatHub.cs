@@ -1,19 +1,16 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using SignalRChatServerExample.Entities;
+using SignalRChatServerExample.Services.UserService;
 
 namespace SignalRChatServerExample.Hubs
 {
-    public class ChatHub : Hub
+    public class ChatHub(IUserService userService) : Hub
     {
-        public override Task OnConnectedAsync()
-        {
-            return base.OnConnectedAsync();
-        }
+        public override async Task OnConnectedAsync()
+            => await userService.OnConnectedAsync(Context.ConnectionId);
 
-        public override Task OnDisconnectedAsync(Exception? exception)
-        {
-            return base.OnDisconnectedAsync(exception);
-        }
+        public override async Task OnDisconnectedAsync(Exception? exception)
+            => await userService.OnDisconnectedAsync();
 
         //public async Task GetNickNameAsync(string nickName)
         //{

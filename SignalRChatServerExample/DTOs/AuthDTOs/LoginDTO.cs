@@ -1,4 +1,4 @@
-﻿namespace SignalRChatServerExample.DTOs
+﻿namespace SignalRChatServerExample.DTOs.AuthDTO
 {
     public class LoginDTO
     {
