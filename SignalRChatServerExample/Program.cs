@@ -7,6 +7,7 @@ using SignalRChatServerExample.Contexts;
 using SignalRChatServerExample.Entities;
 using SignalRChatServerExample.Hubs;
 using SignalRChatServerExample.Services.AuthService;
+using SignalRChatServerExample.Services.ChatRoomService;
 using SignalRChatServerExample.Services.TokenService;
 using SignalRChatServerExample.Services.UserService;
 using System.Security.Claims;
@@ -21,6 +22,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.TryAddScoped<IUserService, UserService>();
 builder.Services.TryAddScoped<IAuthService, AuthService>();
 builder.Services.TryAddScoped<ITokenService, TokenService>();
+builder.Services.TryAddScoped<IChatRoomService, ChatRoomService>();
 
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
 {

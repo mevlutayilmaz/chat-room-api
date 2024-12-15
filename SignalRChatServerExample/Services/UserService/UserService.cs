@@ -10,11 +10,9 @@ namespace SignalRChatServerExample.Services.UserService
     {
         public string? GetCurrentUsername => httpContextAccessor?.HttpContext?.User?.Identity?.Name;
 
-        public AppUser? GetCurrentUser => GetUserByUsernameAsync(GetCurrentUsername).Result;
-
         public async Task OnConnectedAsync(string connectionId)
         {
-            AppUser? user = GetCurrentUser;
+            AppUser? user = await GetUserByUsernameAsync(GetCurrentUsername);
             if (user is not null)
             {
                 user.ConnectionId = connectionId;
@@ -26,7 +24,7 @@ namespace SignalRChatServerExample.Services.UserService
 
         public async Task OnDisconnectedAsync()
         {
-            AppUser? user = GetCurrentUser;
+            AppUser? user = await GetUserByUsernameAsync(GetCurrentUsername);
             if (user is not null)
             {
                 user.ConnectionId = null;
@@ -48,7 +46,7 @@ namespace SignalRChatServerExample.Services.UserService
             }).ToListAsync();
 
         public async Task<AppUser?> GetUserByUsernameAsync(string username)
-            => !string.IsNullOrEmpty(username) ? await userManager.FindByIdAsync(username) : null;
+            => !string.IsNullOrEmpty(username) ? await userManager.FindByNameAsync(username) : null;
 
     }
 }

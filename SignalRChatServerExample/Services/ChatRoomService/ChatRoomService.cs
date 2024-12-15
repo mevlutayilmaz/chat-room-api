@@ -1,5 +1,6 @@
 ﻿using SignalRChatServerExample.Contexts;
 using SignalRChatServerExample.Entities;
+using SignalRChatServerExample.Enums;
 using SignalRChatServerExample.Services.UserService;
 
 namespace SignalRChatServerExample.Services.ChatRoomService
@@ -10,8 +11,8 @@ namespace SignalRChatServerExample.Services.ChatRoomService
     {
         public async Task CreateDirectChatAsync(string username)
         {
-            ChatRoom chatRoom = new() { ChatRoomType = Enums.ChatRoomType.Direct };
-            chatRoom.Participants.Add(userService.GetCurrentUser);
+            ChatRoom chatRoom = new() { ChatRoomType = ChatRoomType.Direct };
+            chatRoom.Participants.Add(await userService.GetUserByUsernameAsync(userService.GetCurrentUsername));
             chatRoom.Participants.Add(await userService.GetUserByUsernameAsync(username));
             await context.ChatRooms.AddAsync(chatRoom);
 
@@ -24,9 +25,9 @@ namespace SignalRChatServerExample.Services.ChatRoomService
             {
                 Name = name,
                 ImageUrl = imageUrl,
-                ChatRoomType = Enums.ChatRoomType.Group
+                ChatRoomType = ChatRoomType.Group
             };
-            chatRoom.Participants.Add(userService.GetCurrentUser);
+            chatRoom.Participants.Add(await userService.GetUserByUsernameAsync(userService.GetCurrentUsername));
 
             foreach (var username in usernameList)
                 chatRoom.Participants.Add(await userService.GetUserByUsernameAsync(username));
@@ -34,6 +35,22 @@ namespace SignalRChatServerExample.Services.ChatRoomService
             await context.ChatRooms.AddAsync(chatRoom);
 
             await context.SaveChangesAsync();
+        }
+
+        public async Task AddUserToGroupChatAsync(string username, string chatRoomId)
+        {
+            ChatRoom? chatRoom = await context.ChatRooms.FindAsync(Guid.Parse(chatRoomId));
+
+            if(chatRoom is not null && chatRoom.ChatRoomType == ChatRoomType.Group)
+            {
+                AppUser? user = await userService.GetUserByUsernameAsync(username);
+                if(user is not null)
+                {
+                    chatRoom.Participants.Add(user);
+                    await context.SaveChangesAsync();
+
+                }
+            }
         }
     }
 }

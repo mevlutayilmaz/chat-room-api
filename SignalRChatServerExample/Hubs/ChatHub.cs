@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SignalRChatServerExample.Contexts;
 using SignalRChatServerExample.Entities;
-using SignalRChatServerExample.Enums;
 using SignalRChatServerExample.Services.UserService;
 
 namespace SignalRChatServerExample.Hubs
@@ -34,11 +33,14 @@ namespace SignalRChatServerExample.Hubs
                 .FirstOrDefaultAsync(cr => cr.Id == Guid.Parse(chatRoomId));
 
             //AppUser sender = await userManager.Users.FirstOrDefaultAsync(u => u.ConnectionId == Context.ConnectionId);
-            AppUser? sender = userService.GetCurrentUser;
+            AppUser? sender = await userService.GetUserByUsernameAsync(userService.GetCurrentUsername);
 
             if(chatRoom is not null)
             {
-                List<string> connectinIds = chatRoom.Participants.Where(u => u.Id != sender.Id).Select(u => u.ConnectionId).ToList();
+                List<string?> connectinIds = chatRoom.Participants
+                    .Where(u => u.Id != sender.Id && !string.IsNullOrEmpty(u.ConnectionId))
+                    .Select(u => u.ConnectionId)
+                    .ToList();
 
                 await Clients.Clients(connectinIds).SendAsync("receiveMessage", message, chatRoom.Id);
 

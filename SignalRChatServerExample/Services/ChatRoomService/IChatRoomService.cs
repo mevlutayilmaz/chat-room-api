@@ -4,5 +4,6 @@
     {
         public Task CreateDirectChatAsync(string username);
         public Task CreateGroupChatAsync(string name, string imageUrl, IEnumerable<string> usernameList);
+        public Task AddUserToGroupChatAsync(string username, string chatRoomId);
     }
 }
