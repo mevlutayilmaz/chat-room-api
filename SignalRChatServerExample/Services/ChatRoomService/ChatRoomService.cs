@@ -1,4 +1,6 @@
-﻿using SignalRChatServerExample.Contexts;
+﻿using Microsoft.EntityFrameworkCore;
+using SignalRChatServerExample.Contexts;
+using SignalRChatServerExample.DTOs.ChatRoomDTOs;
 using SignalRChatServerExample.Entities;
 using SignalRChatServerExample.Enums;
 using SignalRChatServerExample.Services.UserService;
@@ -41,16 +43,33 @@ namespace SignalRChatServerExample.Services.ChatRoomService
         {
             ChatRoom? chatRoom = await context.ChatRooms.FindAsync(Guid.Parse(chatRoomId));
 
-            if(chatRoom is not null && chatRoom.ChatRoomType == ChatRoomType.Group)
+            if (chatRoom is not null && chatRoom.ChatRoomType == ChatRoomType.Group)
             {
                 AppUser? user = await userService.GetUserByUsernameAsync(username);
-                if(user is not null)
+                if (user is not null)
                 {
                     chatRoom.Participants.Add(user);
                     await context.SaveChangesAsync();
 
                 }
             }
+        }
+
+        public async Task<IEnumerable<GetAllChatsDTO>> GetAllChatsAsync()
+        {
+            if (userService.GetCurrentUsername is not null)
+                return await context.ChatRooms
+                    .Include(cr => cr.Participants)
+                    .Where(cr => cr.Participants.Any(u => u.UserName == userService.GetCurrentUsername))
+                    .Select(cr => new GetAllChatsDTO()
+                    {
+                        Id = cr.Id.ToString(),
+                        Name = cr.ChatRoomType == ChatRoomType.Group ? cr.Name : cr.Participants.FirstOrDefault(u => u.UserName != userService.GetCurrentUsername).UserName,
+                        ImageUrl = cr.ChatRoomType == ChatRoomType.Group ? cr.ImageUrl : cr.Participants.FirstOrDefault(u => u.UserName != userService.GetCurrentUsername).ImageUrl,
+                        ChatRoomType = cr.ChatRoomType
+                    }).ToListAsync();
+
+            return null;
         }
     }
 }

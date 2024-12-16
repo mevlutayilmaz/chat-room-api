@@ -36,7 +36,9 @@ namespace SignalRChatServerExample.Services.UserService
         }
 
         public async Task<IEnumerable<GetAllUserDTO>> GetAllUsersAsync()
-            => await userManager.Users.Select(user => new GetAllUserDTO()
+            => await userManager.Users
+            .Where(u => u.UserName != GetCurrentUsername)
+            .Select(user => new GetAllUserDTO()
             {
                 Id = user.Id,
                 Username = user.UserName,

@@ -33,5 +33,9 @@ namespace SignalRChatServerExample.Controllers
             return Ok();
         }
 
+        [HttpGet("[action]")]
+        public async Task<IActionResult> GetAllUsers()
+            => Ok(await userService.GetAllUsersAsync());
+
     }
 }
