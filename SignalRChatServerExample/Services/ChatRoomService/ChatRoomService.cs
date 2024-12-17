@@ -11,7 +11,7 @@ namespace SignalRChatServerExample.Services.ChatRoomService
         IUserService userService,
         ApplicationDbContext context) : IChatRoomService
     {
-        public async Task CreateDirectChatAsync(string username)
+        public async Task<IEnumerable<string?>> CreateDirectChatAsync(string username)
         {
             ChatRoom chatRoom = new() { ChatRoomType = ChatRoomType.Direct };
             chatRoom.Participants.Add(await userService.GetUserByUsernameAsync(userService.GetCurrentUsername));
@@ -19,9 +19,11 @@ namespace SignalRChatServerExample.Services.ChatRoomService
             await context.ChatRooms.AddAsync(chatRoom);
 
             await context.SaveChangesAsync();
+
+            return chatRoom.Participants.Where(p => !string.IsNullOrEmpty(p.ConnectionId)).Select(p => p.ConnectionId).ToList();
         }
 
-        public async Task CreateGroupChatAsync(string name, string imageUrl, IEnumerable<string> usernameList)
+        public async Task<IEnumerable<string?>> CreateGroupChatAsync(string name, string imageUrl, IEnumerable<string> usernameList)
         {
             ChatRoom chatRoom = new()
             {
@@ -37,6 +39,8 @@ namespace SignalRChatServerExample.Services.ChatRoomService
             await context.ChatRooms.AddAsync(chatRoom);
 
             await context.SaveChangesAsync();
+
+            return chatRoom.Participants.Where(p => !string.IsNullOrEmpty(p.ConnectionId)).Select(p => p.ConnectionId).ToList();
         }
 
         public async Task AddUserToGroupChatAsync(string username, string chatRoomId)
