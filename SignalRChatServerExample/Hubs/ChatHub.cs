@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SignalRChatServerExample.Contexts;
@@ -7,8 +8,10 @@ using SignalRChatServerExample.Services.UserService;
 
 namespace SignalRChatServerExample.Hubs
 {
+    [Authorize(AuthenticationSchemes = "Admin")]
     public class ChatHub(IUserService userService, ApplicationDbContext context, UserManager<AppUser> userManager) : Hub
     {
+        
         public override async Task OnConnectedAsync()
         {
             await userService.OnConnectedAsync(Context.ConnectionId);
@@ -16,7 +19,7 @@ namespace SignalRChatServerExample.Hubs
             if (!string.IsNullOrEmpty(userName))
                 await Clients.All.SendAsync("userConnected", userName);
         }
-
+        
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             await userService.OnDisconnectedAsync();
@@ -24,7 +27,7 @@ namespace SignalRChatServerExample.Hubs
             if (!string.IsNullOrEmpty(userName))
                 await Clients.All.SendAsync("userDisconnected", userName);
         }
-
+        
         public async Task SendMessageAsync(string message, string chatRoomId)
         {
             ChatRoom? chatRoom = await context.ChatRooms
@@ -35,22 +38,24 @@ namespace SignalRChatServerExample.Hubs
             //AppUser sender = await userManager.Users.FirstOrDefaultAsync(u => u.ConnectionId == Context.ConnectionId);
             AppUser? sender = await userService.GetUserByUsernameAsync(userService.GetCurrentUsername);
 
-            if(chatRoom is not null)
+            if (chatRoom is not null)
             {
                 List<string?> connectinIds = chatRoom.Participants
-                    .Where(u => u.Id != sender.Id && !string.IsNullOrEmpty(u.ConnectionId))
+                    .Where(u => !string.IsNullOrEmpty(u.ConnectionId))
                     .Select(u => u.ConnectionId)
                     .ToList();
 
-                await Clients.Clients(connectinIds).SendAsync("receiveMessage", message, chatRoom.Id);
-
-                chatRoom.Messages.Add(new()
+                Message _message = new()
                 {
                     Content = message,
                     IsRead = false,
                     SenderId = sender.Id,
                     SentAt = DateTime.UtcNow,
-                });
+                    ChatRoomId = Guid.Parse(chatRoomId)
+                };
+                chatRoom.Messages.Add(_message);
+
+                await Clients.Clients(connectinIds).SendAsync("receiveMessage", _message, chatRoom.Id);
             }
 
             await context.SaveChangesAsync();

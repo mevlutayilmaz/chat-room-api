@@ -28,10 +28,10 @@ builder.Services.TryAddScoped<IMessageService, MessageService>();
 
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
 {
-    policy.AllowCredentials()
+    policy.SetIsOriginAllowed(x => true)
           .AllowAnyHeader()
           .AllowAnyMethod()
-          .SetIsOriginAllowed(x => true);
+          .AllowCredentials();
 }));
 
 builder.Services.AddIdentity<AppUser, IdentityRole<Guid>>(options =>
@@ -46,9 +46,9 @@ builder.Services.AddIdentity<AppUser, IdentityRole<Guid>>(options =>
 }).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer("Admin", option =>
+    .AddJwtBearer("Admin", options =>
     {
-        option.TokenValidationParameters = new()
+        options.TokenValidationParameters = new()
         {
             ValidateAudience = true,
             ValidateIssuer = true,
@@ -61,6 +61,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             LifetimeValidator = (notBefore, expires, securityToken, validationParameters) => expires != null ? expires > DateTime.UtcNow : false,
 
             NameClaimType = ClaimTypes.Name
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var path = context.HttpContext.Request.Path;
+                if (path.StartsWithSegments("/chathub"))
+                {
+                    // Access token'i sorgu parametresinden alma
+                    var accessToken = context.Request.Query["access_token"];
+
+                    // Sadece SignalR endpoint'inde access token'i işle
+                    if (!string.IsNullOrEmpty(accessToken))
+                    {
+                        context.Token = accessToken;
+                    }
+                }
+                
+
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -77,11 +99,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseHttpsRedirection();
+app.UseRouting();
+
 app.UseCors();
 
-app.UseHttpsRedirection();
-
 app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapHub<ChatHub>("/chathub");
 
