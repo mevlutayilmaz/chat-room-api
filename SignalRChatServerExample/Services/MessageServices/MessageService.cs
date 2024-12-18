@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SignalRChatServerExample.Contexts;
 using SignalRChatServerExample.DTOs;
 using SignalRChatServerExample.Entities;
@@ -24,13 +25,22 @@ namespace SignalRChatServerExample.Services.MessageServices
 
                 Message _message = new()
                 {
+                    ChatRoomId = chatRoom.Id,
                     Content = message,
-                    SentAt = DateTime.UtcNow,
+                    SentAt = DateTime.Now,
                     Sender = await userService.GetUserByUsernameAsync(userService.GetCurrentUsername),
-                    IsRead = false
                 };
+                
+                await context.Messages.AddAsync(_message);
+                chatRoom.UpdatedDate = DateTime.Now;
 
-                chatRoom.Messages.Add(_message);
+                foreach (var user in chatRoom.Participants)
+                    await context.MessageReadStatuses.AddAsync(new()
+                    {
+                        MessageId = _message.Id,
+                        UserId = user.Id,
+                        IsRead = user.UserName == userService.GetCurrentUsername ? true : false
+                    });
 
                 await context.SaveChangesAsync();
 
@@ -39,8 +49,8 @@ namespace SignalRChatServerExample.Services.MessageServices
                     Id = _message.Id.ToString(),
                     ChatRoomId = chatRoomId,
                     Content = _message.Content,
-                    IsRead = false,
-                    Sender = _message.Sender.UserName,
+                    SenderName = _message.Sender.NameSurname,
+                    SenderUsername = _message.Sender.UserName,
                     SentAt = _message.SentAt
                 }, connectinIds);
             }
@@ -48,7 +58,10 @@ namespace SignalRChatServerExample.Services.MessageServices
         }
 
         public async Task<IEnumerable<GetMessagesByChatId>> GetMessagesByChatIdAsync(string chatId)
-            => await context.Messages
+        {
+            await ChangeMessageReadStatusAsync(chatId);
+
+            return await context.Messages
                 .Include(m => m.Sender)
                 .Where(m => m.ChatRoomId == Guid.Parse(chatId))
                 .OrderBy(m => m.SentAt)
@@ -57,9 +70,24 @@ namespace SignalRChatServerExample.Services.MessageServices
                     Id = m.Id.ToString(),
                     ChatRoomId = m.ChatRoomId.ToString(),
                     Content = m.Content,
-                    IsRead = m.IsRead,
-                    Sender = m.Sender.UserName,
+                    SenderName = m.Sender.NameSurname,
+                    SenderUsername = m.Sender.UserName,
                     SentAt = m.SentAt
                 }).ToListAsync();
+        }
+
+        public async Task ChangeMessageReadStatusAsync(string chatId)
+        {
+            AppUser? user = await userService.GetUserByUsernameAsync(userService.GetCurrentUsername);
+
+            if(user is not null)
+            {
+                await context.MessageReadStatuses
+                    .Where(mrs => mrs.Message.ChatRoomId == Guid.Parse(chatId) && mrs.UserId == user.Id && !mrs.IsRead)
+                    .ForEachAsync(mrs => mrs.IsRead = true);
+
+                await context.SaveChangesAsync();
+            }
+        }
     }
 }

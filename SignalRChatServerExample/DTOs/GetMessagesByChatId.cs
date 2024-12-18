@@ -7,8 +7,8 @@ namespace SignalRChatServerExample.DTOs
         public string Id { get; set; }
         public string ChatRoomId { get; set; }
         public string Content { get; set; }
-        public bool IsRead { get; set; }
         public DateTime SentAt { get; set; }
-        public string Sender { get; set; }
+        public string SenderName { get; set; }
+        public string SenderUsername { get; set; }
     }
 }

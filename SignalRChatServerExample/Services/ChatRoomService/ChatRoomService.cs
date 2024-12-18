@@ -13,7 +13,7 @@ namespace SignalRChatServerExample.Services.ChatRoomService
     {
         public async Task<IEnumerable<string?>> CreateDirectChatAsync(string username)
         {
-            ChatRoom chatRoom = new() { ChatRoomType = ChatRoomType.Direct };
+            ChatRoom chatRoom = new() { ChatRoomType = ChatRoomType.Direct, UpdatedDate = DateTime.UtcNow };
             chatRoom.Participants.Add(await userService.GetUserByUsernameAsync(userService.GetCurrentUsername));
             chatRoom.Participants.Add(await userService.GetUserByUsernameAsync(username));
             await context.ChatRooms.AddAsync(chatRoom);
@@ -29,7 +29,8 @@ namespace SignalRChatServerExample.Services.ChatRoomService
             {
                 Name = name,
                 ImageUrl = imageUrl,
-                ChatRoomType = ChatRoomType.Group
+                ChatRoomType = ChatRoomType.Group,
+                UpdatedDate = DateTime.Now
             };
             chatRoom.Participants.Add(await userService.GetUserByUsernameAsync(userService.GetCurrentUsername));
 
@@ -61,18 +62,32 @@ namespace SignalRChatServerExample.Services.ChatRoomService
 
         public async Task<IEnumerable<GetAllChatsDTO>> GetAllChatsAsync()
         {
-            if (userService.GetCurrentUsername is not null)
+            AppUser? user = await userService.GetUserByUsernameAsync(userService.GetCurrentUsername);
+
+            if(user is not null)
+            {
+                int unreadMessageCount = await context.MessageReadStatuses
+                    .Where(x => x.UserId == user.Id && !x.IsRead)
+                    .CountAsync();
+
                 return await context.ChatRooms
                     .Include(cr => cr.Participants)
+                    .Include(cr => cr.Messages)
+                    .ThenInclude(m => m.ReadStatuses)
                     .Where(cr => cr.Participants.Any(u => u.UserName == userService.GetCurrentUsername))
+                    .OrderByDescending(cr => cr.UpdatedDate)
                     .Select(cr => new GetAllChatsDTO()
                     {
                         Id = cr.Id.ToString(),
-                        Name = cr.ChatRoomType == ChatRoomType.Group ? cr.Name : cr.Participants.FirstOrDefault(u => u.UserName != userService.GetCurrentUsername).UserName,
-                        ImageUrl = cr.ChatRoomType == ChatRoomType.Group ? cr.ImageUrl : cr.Participants.FirstOrDefault(u => u.UserName != userService.GetCurrentUsername).ImageUrl,
-                        ChatRoomType = cr.ChatRoomType
+                        Name = cr.ChatRoomType == ChatRoomType.Group ? cr.Name : cr.Participants.FirstOrDefault(u => u.UserName != user.UserName).NameSurname,
+                        ImageUrl = cr.ChatRoomType == ChatRoomType.Group ? cr.ImageUrl : cr.Participants.FirstOrDefault(u => u.UserName != user.UserName).ImageUrl,
+                        ChatRoomType = cr.ChatRoomType,
+                        UpdatedDate = cr.UpdatedDate,
+                        UnreadMessageCount = cr.Messages
+                        .Where(m => m.ReadStatuses.Any(rs => !rs.IsRead && rs.UserId == user.Id))
+                        .Count()
                     }).ToListAsync();
-
+            }
             return null;
         }
     }

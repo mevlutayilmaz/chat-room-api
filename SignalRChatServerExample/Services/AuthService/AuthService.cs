@@ -32,8 +32,10 @@ namespace SignalRChatServerExample.Services.AuthService
         {
             IdentityResult result = await userManager.CreateAsync(new()
             {
+                NameSurname = registerDTO.NameSurname,
                 Email = registerDTO.Email,
                 UserName = registerDTO.Username,
+                ImageUrl = registerDTO.ImageUrl,
             }, registerDTO.Password);
 
             return result.Succeeded;

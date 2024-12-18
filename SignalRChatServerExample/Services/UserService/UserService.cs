@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SignalRChatServerExample.DTOs;
 using SignalRChatServerExample.DTOs.UserDTOs;
 using SignalRChatServerExample.Entities;
 
@@ -29,7 +28,7 @@ namespace SignalRChatServerExample.Services.UserService
             {
                 user.ConnectionId = null;
                 user.IsOnline = false;
-                user.LastSeenDate = DateTime.UtcNow;
+                user.LastSeenDate = DateTime.Now;
                 IdentityResult result = await userManager.UpdateAsync(user);
 
             }
@@ -40,11 +39,11 @@ namespace SignalRChatServerExample.Services.UserService
             .Where(u => u.UserName != GetCurrentUsername)
             .Select(user => new GetAllUserDTO()
             {
-                Id = user.Id,
+                NameSurname = user.NameSurname,
                 Username = user.UserName,
                 ImageUrl = user.ImageUrl,
                 IsOnline = user.IsOnline,
-                LastSeenDate = DateTime.UtcNow
+                LastSeenDate = user.LastSeenDate
             }).ToListAsync();
 
         public async Task<AppUser?> GetUserByUsernameAsync(string username)

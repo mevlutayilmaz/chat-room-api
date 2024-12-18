@@ -7,6 +7,7 @@ namespace SignalRChatServerExample.Entities
         public Guid Id { get; set; }
         public string? Name { get; set; }
         public string? ImageUrl { get; set; }
+        public DateTime UpdatedDate { get; set; }
         public ChatRoomType ChatRoomType { get; set; }
         public ICollection<AppUser> Participants { get; set; } = new HashSet<AppUser>();
         public ICollection<Message> Messages { get; set; } = new HashSet<Message>();

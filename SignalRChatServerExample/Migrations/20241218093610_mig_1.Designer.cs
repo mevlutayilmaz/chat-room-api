@@ -12,7 +12,7 @@ using SignalRChatServerExample.Contexts;
 namespace SignalRChatServerExample.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241215092537_mig_1")]
+    [Migration("20241218093610_mig_1")]
     partial class mig_1
     {
         /// <inheritdoc />
@@ -209,6 +209,10 @@ namespace SignalRChatServerExample.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("NameSurname")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -264,6 +268,9 @@ namespace SignalRChatServerExample.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.ToTable("ChatRooms");
@@ -282,9 +289,6 @@ namespace SignalRChatServerExample.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
                     b.Property<Guid>("SenderId")
                         .HasColumnType("uniqueidentifier");
 
@@ -298,6 +302,24 @@ namespace SignalRChatServerExample.Migrations
                     b.HasIndex("SenderId");
 
                     b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("SignalRChatServerExample.Entities.MessageReadStatus", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.HasKey("MessageId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MessageReadStatuses");
                 });
 
             modelBuilder.Entity("AppUserChatRoom", b =>
@@ -385,14 +407,40 @@ namespace SignalRChatServerExample.Migrations
                     b.Navigation("Sender");
                 });
 
+            modelBuilder.Entity("SignalRChatServerExample.Entities.MessageReadStatus", b =>
+                {
+                    b.HasOne("SignalRChatServerExample.Entities.Message", "Message")
+                        .WithMany("ReadStatuses")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("SignalRChatServerExample.Entities.AppUser", "User")
+                        .WithMany("ReadStatuses")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SignalRChatServerExample.Entities.AppUser", b =>
                 {
+                    b.Navigation("ReadStatuses");
+
                     b.Navigation("SentMessages");
                 });
 
             modelBuilder.Entity("SignalRChatServerExample.Entities.ChatRoom", b =>
                 {
                     b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("SignalRChatServerExample.Entities.Message", b =>
+                {
+                    b.Navigation("ReadStatuses");
                 });
 #pragma warning restore 612, 618
         }
