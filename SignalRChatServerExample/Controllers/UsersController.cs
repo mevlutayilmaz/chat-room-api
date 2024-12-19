@@ -15,5 +15,9 @@ namespace SignalRChatServerExample.Controllers
         public async Task<IActionResult> GetAllUsers()
             => Ok(await userService.GetAllUsersAsync());
 
+        [HttpGet("[action]/{chatRoomId}")]
+        public async Task<IActionResult> GetUserOnlineStatus(string chatRoomId)
+            => Ok(await userService.GetUserOnlineStatusAsync(chatRoomId));
+
     }
 }

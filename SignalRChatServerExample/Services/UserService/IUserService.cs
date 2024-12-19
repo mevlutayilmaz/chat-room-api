@@ -11,5 +11,6 @@ namespace SignalRChatServerExample.Services.UserService
         public Task OnDisconnectedAsync();
         public Task<IEnumerable<GetAllUserDTO>> GetAllUsersAsync();
         public Task<AppUser?> GetUserByUsernameAsync(string username);
+        public Task<IEnumerable<GetUserOnlineStatusDTO>> GetUserOnlineStatusAsync(string chatRoomId);
     }
 }

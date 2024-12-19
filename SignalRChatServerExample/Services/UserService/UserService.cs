@@ -1,11 +1,15 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SignalRChatServerExample.Contexts;
 using SignalRChatServerExample.DTOs.UserDTOs;
 using SignalRChatServerExample.Entities;
 
 namespace SignalRChatServerExample.Services.UserService
 {
-    public class UserService(UserManager<AppUser> userManager, IHttpContextAccessor httpContextAccessor) : IUserService
+    public class UserService(
+        UserManager<AppUser> userManager, 
+        IHttpContextAccessor httpContextAccessor, 
+        ApplicationDbContext context) : IUserService
     {
         public string? GetCurrentUsername => httpContextAccessor?.HttpContext?.User?.Identity?.Name;
 
@@ -49,5 +53,16 @@ namespace SignalRChatServerExample.Services.UserService
         public async Task<AppUser?> GetUserByUsernameAsync(string username)
             => !string.IsNullOrEmpty(username) ? await userManager.FindByNameAsync(username) : null;
 
+        public async Task<IEnumerable<GetUserOnlineStatusDTO>> GetUserOnlineStatusAsync(string chatRoomId)
+            => await context.ChatRooms
+                .Include(cr => cr.Participants)
+                .Where(cr => cr.Id == Guid.Parse(chatRoomId))
+                .SelectMany(cr => cr.Participants.Where(p => p.UserName != GetCurrentUsername))
+                .Select(p => new GetUserOnlineStatusDTO()
+                {
+                    NameSurname = p.NameSurname,
+                    IsOnline = p.IsOnline,
+                    LastSeenDate = p.LastSeenDate
+                }).ToListAsync();
     }
 }
