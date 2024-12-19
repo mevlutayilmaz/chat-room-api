@@ -105,7 +105,7 @@ Aşağıda, projenin veritabanı şemasını oluşturan tablolar ve ilişkileri 
     -   `Name (string)`: Sohbet odası adı.
     -   `ImageUrl (string)`: Sohbet odası resim URL'si.
     -   `UpdatedDate (DateTime)`: Sohbet odasının güncellenme zamanı.
-    -   `ChatRoomType (int)`: Sohbet odası türü (Örneğin: Private, Public).
+    -   `ChatRoomType (int)`: Sohbet odası türü (Group, Direct).
 -   **`AppUserChatRoom`**: Kullanıcılar ve sohbet odaları arasındaki çok-çok ilişkiyi tutar.
      - `ChatRoomsId (Guid)`: Sohbet odası ID'si.
     - `ParticipantsId (Guid)`: Kullanıcı ID'si.
